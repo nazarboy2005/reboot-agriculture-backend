@@ -12,7 +12,7 @@ The error "redirect_uri_mismatch" occurs when the redirect URI in the Google Clo
 4. Click "Edit"
 5. In "Authorized redirect URIs", add:
    ```
-   https://agriculture-backend-1077945709935.europe-west1.run.app/api/login/oauth2/code/google
+   https://reboot-agrismart-1077945709935.europe-west1.run.app/api/login/oauth2/code/google
    ```
 6. Save the changes
 
@@ -26,7 +26,7 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 ### 3. Application Configuration
 The application.properties file has been updated with the correct redirect URI:
 ```properties
-spring.security.oauth2.client.registration.google.redirect-uri=https://agriculture-backend-1077945709935.europe-west1.run.app/api/login/oauth2/code/google
+spring.security.oauth2.client.registration.google.redirect-uri=https://reboot-agrismart-1077945709935.europe-west1.run.app/api/login/oauth2/code/google
 ```
 
 ### 4. Frontend Configuration

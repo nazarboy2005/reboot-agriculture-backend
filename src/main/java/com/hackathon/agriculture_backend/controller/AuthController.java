@@ -169,7 +169,7 @@ public class AuthController {
             user.setEmail(request.getEmail());
             user.setName(request.getName());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
-            user.setEmailVerified(false);
+            user.setEmailVerified(true); // Set email as verified by default
             user.setIsEnabled(true);
             user.setRole(User.Role.USER);
             
@@ -177,16 +177,8 @@ public class AuthController {
             User savedUser = userService.save(user);
             log.info("User saved with role: {}", savedUser.getRole());
             
-            // Generate email confirmation token
-            String confirmationToken = tokenService.generateEmailConfirmationToken(request.getEmail());
-            savedUser.setEmailVerificationToken(confirmationToken);
-            userService.save(savedUser);
-            
-            // Send confirmation email
-            emailService.sendEmailConfirmation(request.getEmail(), request.getName(), confirmationToken);
-            
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "Registration successful. Please check your email to confirm your account.");
+            response.put("message", "Registration successful. Your account is ready to use.");
             response.put("email", request.getEmail());
             
             return ResponseEntity.ok(ApiResponse.success("Registration successful", response));
