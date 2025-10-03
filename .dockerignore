@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Runtime
+target/
+!target/app.jar
+
+# Environment files
+.env
+.env.local
+.env.production
+env.example
+railway.env.final
+
+# Documentation
+*.md
+README.md
+VERCEL_DEPLOYMENT_GUIDE.md
+AI_CHAT_SETUP.md
+AUTHENTICATION_SETUP.md
+
+# Build artifacts
+*.jar
+*.war
+*.ear
+*.class
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# Node modules (if any)
+node_modules/
+
+# Coverage reports
+coverage/
+*.lcov
+
+# Test results
+test-results/
+surefire-reports/
