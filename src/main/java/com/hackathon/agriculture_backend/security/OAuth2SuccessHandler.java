@@ -1,7 +1,7 @@
 package com.hackathon.agriculture_backend.security;
 
 import com.hackathon.agriculture_backend.model.User;
-import com.hackathon.agriculture_backend.repository.UserRepository;
+import com.hackathon.agriculture_backend.service.UserService;
 import com.hackathon.agriculture_backend.util.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ import java.util.Optional;
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
@@ -44,7 +44,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 log.info("OAuth2 login successful for user: {}", email);
                 
                 // Find or create user
-                Optional<User> userOptional = userRepository.findByEmail(email);
+                Optional<User> userOptional = userService.findByEmailOptional(email);
                 User user;
                 if (userOptional.isEmpty()) {
                     user = new User();
@@ -55,7 +55,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                     user.setRole(User.Role.USER);
                     user.setEmailVerified(true);
                     user.setIsEnabled(true);
-                    userRepository.save(user);
+                    user = userService.save(user); // This will also create Farmer entity
                     log.info("Created new OAuth2 user: {}", email);
                 } else {
                     user = userOptional.get();

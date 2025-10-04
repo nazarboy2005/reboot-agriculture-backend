@@ -11,9 +11,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/v1/farmers")
+@RequestMapping("/api/v1/farmers")
 @RequiredArgsConstructor
 @Slf4j
 public class FarmerController {
@@ -55,6 +56,31 @@ public class FarmerController {
         return farmerService.getFarmerByPhone(phone)
                 .map(farmer -> ResponseEntity.ok(ApiResponse.success(farmer)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @GetMapping("/email/{email}")
+    public ResponseEntity<ApiResponse<FarmerDto>> getFarmerByEmail(@PathVariable String email) {
+        System.out.println("Fetching farmer with email: " + email);
+        
+        try {
+            // First try to find existing farmer by email
+            Optional<FarmerDto> existingFarmer = farmerService.getFarmerByEmail(email);
+            if (existingFarmer.isPresent()) {
+                System.out.println("Found existing farmer for email: " + email);
+                return ResponseEntity.ok(ApiResponse.success(existingFarmer.get()));
+            }
+            
+            // If no farmer exists, create a new one
+            System.out.println("Creating new farmer for email: " + email);
+            FarmerDto newFarmer = farmerService.createFarmerForUserWithoutEmail(email);
+            return ResponseEntity.ok(ApiResponse.success(newFarmer));
+            
+        } catch (Exception e) {
+            System.out.println("Error handling farmer for email " + email + ": " + e.getMessage());
+            e.printStackTrace(); // Print full stack trace for debugging
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to get/create farmer: " + e.getMessage()));
+        }
     }
     
     @GetMapping

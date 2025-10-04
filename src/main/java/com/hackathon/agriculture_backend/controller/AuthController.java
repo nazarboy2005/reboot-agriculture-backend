@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/v1/auth")
+@RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
 @Slf4j
 public class AuthController {
@@ -157,36 +157,47 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<Map<String, Object>>> register(@Valid @RequestBody RegisterRequest request) {
         try {
-            // Check if user already exists
+            log.info("Attempting to register user with email: {}", request.getEmail());
+
+            // Basic validation
+            if (request.getEmail() == null || request.getPassword() == null) {
+                return ResponseEntity.badRequest()
+                        .body(ApiResponse.error("Email and password are required"));
+            }
+
+            // Check if user exists with detailed message
             Optional<User> existingUser = userService.findByEmailOptional(request.getEmail());
             if (existingUser.isPresent()) {
                 return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("User with this email already exists"));
+                        .body(ApiResponse.error("An account with this email already exists. Please login or use a different email."));
             }
             
-            // Create new user
+            // Create new user with simplified process
             User user = new User();
             user.setEmail(request.getEmail());
-            user.setName(request.getName());
+            user.setName(request.getName() != null ? request.getName() : request.getEmail().split("@")[0]);
             user.setPassword(passwordEncoder.encode(request.getPassword()));
-            user.setEmailVerified(true); // Set email as verified by default
+            user.setEmailVerified(true); // Auto-verify email for simplicity
             user.setIsEnabled(true);
             user.setRole(User.Role.USER);
             
-            log.info("Creating user with role: {}", user.getRole());
             User savedUser = userService.save(user);
-            log.info("User saved with role: {}", savedUser.getRole());
-            
+            log.info("User registered successfully with ID: {}", savedUser.getId());
+
+            // Generate JWT token for immediate login
+            String token = jwtUtil.generateToken(savedUser);
+
             Map<String, Object> response = new HashMap<>();
-            response.put("message", "Registration successful. Your account is ready to use.");
-            response.put("email", request.getEmail());
-            
+            response.put("token", token);
+            response.put("type", "Bearer");
+            response.put("user", createUserResponse(savedUser));
+
             return ResponseEntity.ok(ApiResponse.success("Registration successful", response));
             
         } catch (Exception e) {
-            log.error("Error during registration: {}", e.getMessage());
+            log.error("Registration failed for email: {}. Error: {}", request.getEmail(), e.getMessage(), e);
             return ResponseEntity.status(500)
-                    .body(ApiResponse.error("Registration failed: " + e.getMessage()));
+                    .body(ApiResponse.error("Registration failed. Please try again. Error: " + e.getMessage()));
         }
     }
     
@@ -220,12 +231,8 @@ public class AuthController {
                         .body(ApiResponse.error("Invalid email or password"));
             }
             
-            // Check if email is verified
-            if (!user.getEmailVerified()) {
-                log.warn("Login failed: Email not verified for user: {}", user.getEmail());
-                return ResponseEntity.badRequest()
-                        .body(ApiResponse.error("Please verify your email before logging in"));
-            }
+            // Email verification is optional - users can login immediately after registration
+            log.info("User email verification status: {}", user.getEmailVerified());
             
             // Generate JWT token
             String token = jwtUtil.generateToken(user);
@@ -589,6 +596,93 @@ public class AuthController {
         public void setEmail(String email) { this.email = email; }
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
+    }
+    
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, Object>> health() {
+        Map<String, Object> health = new HashMap<>();
+        health.put("status", "UP");
+        health.put("service", "Auth Service");
+        health.put("timestamp", System.currentTimeMillis());
+        return ResponseEntity.ok(health);
+    }
+    
+    @GetMapping("/debug/database")
+    public ResponseEntity<Map<String, Object>> debugDatabase() {
+        try {
+            log.info("Testing database connection...");
+            
+            // Test database connection
+            long userCount = userService.count();
+            log.info("Database connection successful - user count: {}", userCount);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "Database connected successfully");
+            response.put("userCount", userCount);
+            response.put("timestamp", System.currentTimeMillis());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Database connection error: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "Database connection failed");
+            error.put("error", e.getMessage());
+            error.put("timestamp", System.currentTimeMillis());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+    
+    @GetMapping("/debug/register")
+    public ResponseEntity<Map<String, Object>> debugRegisterGet() {
+        try {
+            log.info("Debug registration GET request");
+            
+            // Test database connection
+            long userCount = userService.count();
+            log.info("Database connection test - user count: {}", userCount);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "Database connected");
+            response.put("userCount", userCount);
+            response.put("method", "GET");
+            response.put("timestamp", System.currentTimeMillis());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Debug registration error: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "Error");
+            error.put("error", e.getMessage());
+            error.put("timestamp", System.currentTimeMillis());
+            return ResponseEntity.status(500).body(error);
+        }
+    }
+    
+    @PostMapping("/debug/register")
+    public ResponseEntity<Map<String, Object>> debugRegisterPost(@RequestBody(required = false) Map<String, String> request) {
+        try {
+            log.info("Debug registration POST request for email: {}", request != null ? request.get("email") : "no email provided");
+            
+            // Test database connection
+            long userCount = userService.count();
+            log.info("Database connection test - user count: {}", userCount);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "Database connected");
+            response.put("userCount", userCount);
+            response.put("method", "POST");
+            response.put("email", request != null ? request.get("email") : "no email provided");
+            response.put("timestamp", System.currentTimeMillis());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Debug registration error: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("status", "Error");
+            error.put("error", e.getMessage());
+            error.put("timestamp", System.currentTimeMillis());
+            return ResponseEntity.status(500).body(error);
+        }
     }
     
     public static class ResetPasswordRequest {

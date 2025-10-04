@@ -47,6 +47,68 @@ public class FarmerService {
                 .map(this::convertToDto);
     }
     
+    public Optional<FarmerDto> getFarmerByEmail(String email) {
+        log.info("Fetching farmer with email: {}", email);
+        return farmerRepository.findByEmail(email)
+                .map(this::convertToDto);
+    }
+    
+    public FarmerDto getOrCreateFarmerForUser(String email) {
+        log.info("Getting or creating farmer for user email: {}", email);
+        
+        try {
+            // First try to find existing farmer by email
+            Optional<Farmer> existingFarmer = farmerRepository.findByEmail(email);
+            if (existingFarmer.isPresent()) {
+                log.info("Found existing farmer for email: {}", email);
+                return convertToDto(existingFarmer.get());
+            }
+        } catch (Exception e) {
+            log.warn("Error finding farmer by email (column might not exist): {}", e.getMessage());
+        }
+        
+        // If no farmer exists or email column doesn't exist, create a new one
+        log.info("No farmer found for email: {}, creating new farmer", email);
+        Farmer farmer = new Farmer();
+        farmer.setName("User"); // Default name, user can update later
+        farmer.setPhone("+00000000000"); // Default phone, user can update later
+        farmer.setEmail(email);
+        farmer.setLocationName("Default Location"); // Default location, user can update later
+        farmer.setLatitude(25.2854); // Default to Doha coordinates
+        farmer.setLongitude(51.5310);
+        farmer.setPreferredCrop("General"); // Default crop
+        farmer.setSmsOptIn(false);
+        
+        Farmer savedFarmer = farmerRepository.save(farmer);
+        log.info("Created farmer with ID: {} for email: {}", savedFarmer.getId(), email);
+        
+        return convertToDto(savedFarmer);
+    }
+    
+    public FarmerDto createFarmerForUserWithoutEmail(String email) {
+        log.info("Creating farmer for user email (without email field): {}", email);
+        
+        // Create new farmer without email field to avoid database issues
+        Farmer farmer = new Farmer();
+        farmer.setName("User"); // Default name, user can update later
+        farmer.setPhone("+00000000000"); // Default phone, user can update later
+        farmer.setLocationName("Default Location"); // Default location, user can update later
+        farmer.setLatitude(25.2854); // Default to Doha coordinates
+        farmer.setLongitude(51.5310);
+        farmer.setPreferredCrop("General"); // Default crop
+        farmer.setSmsOptIn(false);
+        // Don't set email field to avoid database constraint issues
+        
+        try {
+            Farmer savedFarmer = farmerRepository.save(farmer);
+            log.info("Created farmer with ID: {} for email: {}", savedFarmer.getId(), email);
+            return convertToDto(savedFarmer);
+        } catch (Exception e) {
+            log.error("Error creating farmer for email {}: {}", email, e.getMessage());
+            throw new RuntimeException("Failed to create farmer: " + e.getMessage(), e);
+        }
+    }
+    
     public List<FarmerDto> getAllFarmers() {
         log.info("Fetching all farmers");
         return farmerRepository.findAll()
@@ -122,6 +184,7 @@ public class FarmerService {
         Farmer farmer = new Farmer();
         farmer.setName(dto.getName());
         farmer.setPhone(dto.getPhone());
+        farmer.setEmail(dto.getEmail());
         farmer.setLocationName(dto.getLocationName());
         farmer.setLatitude(dto.getLatitude());
         farmer.setLongitude(dto.getLongitude());
@@ -135,6 +198,7 @@ public class FarmerService {
         dto.setId(farmer.getId());
         dto.setName(farmer.getName());
         dto.setPhone(farmer.getPhone());
+        dto.setEmail(farmer.getEmail());
         dto.setLocationName(farmer.getLocationName());
         dto.setLatitude(farmer.getLatitude());
         dto.setLongitude(farmer.getLongitude());
@@ -148,6 +212,7 @@ public class FarmerService {
     private void updateFarmerFromDto(Farmer farmer, FarmerDto dto) {
         farmer.setName(dto.getName());
         farmer.setPhone(dto.getPhone());
+        farmer.setEmail(dto.getEmail());
         farmer.setLocationName(dto.getLocationName());
         farmer.setLatitude(dto.getLatitude());
         farmer.setLongitude(dto.getLongitude());

@@ -14,6 +14,8 @@ public interface FarmerRepository extends JpaRepository<Farmer, Long> {
     
     Optional<Farmer> findByPhone(String phone);
     
+    Optional<Farmer> findByEmail(String email);
+    
     List<Farmer> findBySmsOptInTrue();
     
     List<Farmer> findByLocationName(String locationName);

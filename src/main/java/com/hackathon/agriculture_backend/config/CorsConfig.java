@@ -22,7 +22,7 @@ public class CorsConfig {
                             "https://agriculture-frontend-two.vercel.app",
                             "https://agriculture-frontend.vercel.app", 
                             "https://agriculture-frontend-btleirx65.vercel.app",
-                            "http://localhost:3000",
+                            "https://reboot-agriculture-frontend.vercel.com",
                             "http://127.0.0.1:3000",
                             frontendUrl
                         )

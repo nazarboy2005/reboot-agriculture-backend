@@ -52,21 +52,26 @@ public class SecurityConfig {
                 .requestMatchers("/login/**").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/v1/chat/**").permitAll() // Allow chat for demo purposes
-                .requestMatchers("/v1/smart-irrigation/**").permitAll() // Allow smart irrigation for demo purposes
-                .requestMatchers("/v1/farmer-zones/**").permitAll() // Allow zone management for demo purposes
-                .requestMatchers("/v1/recommendations/**").permitAll() // Allow recommendations for demo purposes
+                .requestMatchers("/api/v1/chat/**").permitAll() // Allow chat for demo purposes
+                .requestMatchers("/api/v1/smart-irrigation/**").permitAll() // Allow smart irrigation for demo purposes
+                .requestMatchers("/api/v1/farmer-zones/**").permitAll() // Allow zone management for demo purposes
+                .requestMatchers("/api/v1/recommendations/**").permitAll() // Allow recommendations for demo purposes
                 .requestMatchers("/disease/**").permitAll() // Allow disease detection for demo purposes
                 .requestMatchers("/health/**").permitAll() // Allow health checks
-                .requestMatchers("/v1/settings/**").authenticated() // User settings require authentication
-                .requestMatchers("/v1/farmers/**").authenticated()
-                .requestMatchers("/v1/alerts/**").authenticated()
-                .requestMatchers("/v1/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/v1/farmers/**").permitAll() // Allow farmer endpoints for demo purposes
+                .requestMatchers("/api/v1/settings/**").authenticated() // User settings require authentication
+                .requestMatchers("/api/v1/alerts/**").authenticated()
+                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
             // OAuth2 login configuration
             .oauth2Login(oauth2 -> oauth2
-                .loginPage("/oauth2/authorization/google")
+                .authorizationEndpoint(authorization -> authorization
+                    .baseUri("/oauth2/authorization")
+                )
+                .redirectionEndpoint(redirection -> redirection
+                    .baseUri("/api/login/oauth2/code/*") // Configure the redirection endpoint
+                )
                 .successHandler(oauth2SuccessHandler)
                 .failureUrl(frontendUrl + "/login?error=true")
             )

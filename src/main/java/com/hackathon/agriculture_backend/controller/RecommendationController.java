@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/recommendations")
+@RequestMapping("/api/v1/recommendations")
 @RequiredArgsConstructor
 @Slf4j
 public class RecommendationController {

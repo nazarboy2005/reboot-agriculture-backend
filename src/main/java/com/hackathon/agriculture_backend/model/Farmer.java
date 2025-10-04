@@ -29,6 +29,9 @@ public class Farmer {
     @Pattern(regexp = "^\\+[1-9]\\d{1,14}$", message = "Phone number must be in international format (e.g., +97412345678)")
     private String phone;
     
+    @Column(unique = true)
+    private String email;
+    
     @NotBlank(message = "Location name is required")
     @Size(max = 100, message = "Location name must not exceed 100 characters")
     private String locationName;

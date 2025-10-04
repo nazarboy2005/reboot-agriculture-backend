@@ -12,7 +12,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/v1/settings")
+@RequestMapping("/api/v1/settings")
 @RequiredArgsConstructor
 @Slf4j
 public class UserSettingsController {

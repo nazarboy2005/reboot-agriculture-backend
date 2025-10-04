@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/smart-irrigation")
+@RequestMapping("/api/v1/smart-irrigation")
 @RequiredArgsConstructor
 @Slf4j
 public class SmartIrrigationController {

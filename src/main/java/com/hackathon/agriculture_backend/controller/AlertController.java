@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/alerts")
+@RequestMapping("/api/v1/alerts")
 @RequiredArgsConstructor
 @Slf4j
 public class AlertController {
