@@ -6,16 +6,24 @@ import com.hackathon.agriculture_backend.dto.WaterSavingsDto;
 import com.hackathon.agriculture_backend.service.FarmerService;
 import com.hackathon.agriculture_backend.repository.IrrigationRecommendationRepository;
 import com.hackathon.agriculture_backend.repository.AlertLogRepository;
+import com.hackathon.agriculture_backend.repository.FarmerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.hackathon.agriculture_backend.model.Farmer;
+import com.hackathon.agriculture_backend.model.IrrigationRecommendation;
+import com.hackathon.agriculture_backend.repository.FarmerRepository;
+
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/admin")
@@ -26,6 +34,7 @@ public class AdminController {
     private final FarmerService farmerService;
     private final IrrigationRecommendationRepository recommendationRepository;
     private final AlertLogRepository alertLogRepository;
+    private final FarmerRepository farmerRepository;
     
     @GetMapping("/metrics")
     @PreAuthorize("hasRole('ADMIN')")
@@ -33,51 +42,46 @@ public class AdminController {
         log.info("Fetching admin metrics");
         
         try {
-            // Create mock admin metrics for now
+            LocalDate today = LocalDate.now();
+            LocalDate last30Days = today.minusDays(30);
+
             AdminMetricsDto metrics = new AdminMetricsDto();
-            metrics.setTotalFarmers(25L);
-            metrics.setActiveFarmers(23L);
-            metrics.setFarmersWithSmsOptIn(20L);
-            metrics.setTotalWaterSavedLiters(1500.5);
-            metrics.setTotalRecommendations(150L);
-            metrics.setSuccessfulAlerts(45L);
-            metrics.setFailedAlerts(2L);
-            
-            // Mock crop distribution
-            List<AdminMetricsDto.CropDistribution> cropDistribution = List.of(
-                new AdminMetricsDto.CropDistribution("Wheat", 10L, 40.0),
-                new AdminMetricsDto.CropDistribution("Rice", 8L, 32.0),
-                new AdminMetricsDto.CropDistribution("Corn", 7L, 28.0)
-            );
+            metrics.setTotalFarmers(farmerRepository.count());
+            metrics.setActiveFarmers(recommendationRepository.countActiveFarmersByDateRange(last30Days, today));
+            metrics.setFarmersWithSmsOptIn(farmerRepository.countBySmsOptInTrue());
+
+            Double totalWaterSaved = recommendationRepository.calculateTotalWaterSavedByDateRange(last30Days, today);
+            metrics.setTotalWaterSavedLiters(totalWaterSaved != null ? totalWaterSaved : 0.0);
+
+            metrics.setTotalRecommendations(recommendationRepository.count());
+            metrics.setSuccessfulAlerts(alertLogRepository.countByStatusAndDateRange("SENT", last30Days.atStartOfDay().toInstant(ZoneOffset.UTC), today.atTime(LocalTime.MAX).toInstant(ZoneOffset.UTC)));
+            metrics.setFailedAlerts(alertLogRepository.countByStatusAndDateRange("FAILED", last30Days.atStartOfDay().toInstant(ZoneOffset.UTC), today.atTime(LocalTime.MAX).toInstant(ZoneOffset.UTC)));
+
+            List<AdminMetricsDto.CropDistribution> cropDistribution = farmerRepository.findCropDistribution().stream()
+                .map(obj -> new AdminMetricsDto.CropDistribution((String) obj[0], (Long) obj[1], 0.0)) // Percentage calculation needed
+                .collect(Collectors.toList());
             metrics.setCropDistribution(cropDistribution);
-            
-            // Mock recommendation distribution
-            List<AdminMetricsDto.RecommendationDistribution> recommendationDistribution = List.of(
-                new AdminMetricsDto.RecommendationDistribution("HIGH", 45L, 30.0),
-                new AdminMetricsDto.RecommendationDistribution("MEDIUM", 60L, 40.0),
-                new AdminMetricsDto.RecommendationDistribution("LOW", 45L, 30.0)
-            );
+
+            List<AdminMetricsDto.RecommendationDistribution> recommendationDistribution = recommendationRepository.findRecommendationDistributionByDateRange(last30Days, today).stream()
+                .map(obj -> new AdminMetricsDto.RecommendationDistribution((String) obj[0], (Long) obj[1], 0.0)) // Percentage calculation needed
+                .collect(Collectors.toList());
             metrics.setRecommendationDistribution(recommendationDistribution);
-            
-            // Mock alert type distribution
-            List<AdminMetricsDto.AlertTypeDistribution> alertTypeDistribution = List.of(
-                new AdminMetricsDto.AlertTypeDistribution("IRRIGATION", 30L, 60.0),
-                new AdminMetricsDto.AlertTypeDistribution("WEATHER", 15L, 30.0),
-                new AdminMetricsDto.AlertTypeDistribution("CROP", 5L, 10.0)
-            );
+
+            List<AdminMetricsDto.AlertTypeDistribution> alertTypeDistribution = alertLogRepository.findAlertTypeDistributionByDateRange(last30Days.atStartOfDay().toInstant(ZoneOffset.UTC), today.atTime(LocalTime.MAX).toInstant(ZoneOffset.UTC)).stream()
+                .map(obj -> new AdminMetricsDto.AlertTypeDistribution((String) obj[0], (Long) obj[1], 0.0)) // Percentage calculation needed
+                .collect(Collectors.toList());
             metrics.setAlertTypeDistribution(alertTypeDistribution);
-            
-            // Mock daily metrics
+
             Map<String, Object> dailyMetrics = Map.of(
-                "todayRecommendations", 12,
-                "todayWaterSaved", 85.5,
-                "todayAlerts", 3,
-                "activeUsers", 18
+                "todayRecommendations", recommendationRepository.findByDate(today).size(),
+                "todayWaterSaved", recommendationRepository.calculateTotalWaterSavedByDateRange(today, today),
+                "todayAlerts", alertLogRepository.findByCreatedAtBetween(today.atStartOfDay().toInstant(ZoneOffset.UTC), today.atTime(LocalTime.MAX).toInstant(ZoneOffset.UTC)).size(),
+                "activeUsers", recommendationRepository.countActiveFarmersByDateRange(today, today)
             );
             metrics.setDailyMetrics(dailyMetrics);
-            
+
             return ResponseEntity.ok(ApiResponse.success("Admin metrics retrieved successfully", metrics));
-            
+
         } catch (Exception e) {
             log.error("Error fetching admin metrics", e);
             return ResponseEntity.status(500)
@@ -91,34 +95,36 @@ public class AdminController {
             @PathVariable Long farmerId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        
+
         log.info("Fetching water savings for farmer ID: {} from {} to {}", farmerId, from, to);
-        
+
         try {
-            // Create mock water savings data
+            Farmer farmer = farmerRepository.findById(farmerId)
+                    .orElseThrow(() -> new IllegalArgumentException("Farmer not found with ID: " + farmerId));
+
             WaterSavingsDto waterSavings = new WaterSavingsDto();
             waterSavings.setFarmerId(farmerId);
-            waterSavings.setFarmerName("John Doe"); // Mock farmer name
+            waterSavings.setFarmerName(farmer.getName());
             waterSavings.setFromDate(from);
             waterSavings.setToDate(to);
-            waterSavings.setTotalWaterSavedLiters(250.5);
-            
-            // Create mock daily savings data
-            List<WaterSavingsDto.DailyWaterSavings> dailySavings = List.of(
-                new WaterSavingsDto.DailyWaterSavings(
-                    from.plusDays(0), "Wheat", "HIGH", 45.2, "High irrigation saved 45.2L water"
-                ),
-                new WaterSavingsDto.DailyWaterSavings(
-                    from.plusDays(1), "Wheat", "MEDIUM", 30.1, "Medium irrigation saved 30.1L water"
-                ),
-                new WaterSavingsDto.DailyWaterSavings(
-                    from.plusDays(2), "Wheat", "LOW", 15.8, "Low irrigation saved 15.8L water"
-                )
-            );
+
+            Double totalWaterSaved = recommendationRepository.calculateWaterSavedByFarmerAndDateRange(farmerId, from, to);
+            waterSavings.setTotalWaterSavedLiters(totalWaterSaved != null ? totalWaterSaved : 0.0);
+
+            List<IrrigationRecommendation> recommendations = recommendationRepository.findByFarmerIdAndDateBetween(farmerId, from, to);
+            List<WaterSavingsDto.DailyWaterSavings> dailySavings = recommendations.stream()
+                .map(rec -> new WaterSavingsDto.DailyWaterSavings(
+                    rec.getDate(),
+                    rec.getCropType(),
+                    rec.getRecommendation(),
+                    rec.getWaterSavedLiters(),
+                    rec.getExplanation()
+                ))
+                .collect(Collectors.toList());
             waterSavings.setDailySavings(dailySavings);
-            
+
             return ResponseEntity.ok(ApiResponse.success("Water savings retrieved successfully", waterSavings));
-            
+
         } catch (Exception e) {
             log.error("Error fetching water savings", e);
             return ResponseEntity.status(500)

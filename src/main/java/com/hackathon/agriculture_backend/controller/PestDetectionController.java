@@ -22,7 +22,7 @@ public class PestDetectionController {
     private final PestDetectionService pestDetectionService;
 
     @PostMapping("/detect")
-    public CompletableFuture<ResponseEntity<Object>> detectPest(@RequestParam("image") MultipartFile image) {
+    public CompletableFuture<ResponseEntity<?>> detectPest(@RequestParam("image") MultipartFile image) {
         log.info("Received pest detection request for image: {}", image.getOriginalFilename());
 
         try {

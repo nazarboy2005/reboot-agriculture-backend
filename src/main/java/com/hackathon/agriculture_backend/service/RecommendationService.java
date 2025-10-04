@@ -3,6 +3,7 @@ package com.hackathon.agriculture_backend.service;
 import com.hackathon.agriculture_backend.dto.RecommendationResult;
 import com.hackathon.agriculture_backend.dto.RecommendationRequestDto;
 import com.hackathon.agriculture_backend.dto.RecommendationResponseDto;
+import com.hackathon.agriculture_backend.dto.RecommendationDto;
 import com.hackathon.agriculture_backend.dto.WeatherDto;
 import com.hackathon.agriculture_backend.model.Crop;
 import com.hackathon.agriculture_backend.model.Farmer;
@@ -156,7 +157,27 @@ public class RecommendationService {
     public Optional<IrrigationRecommendation> getRecommendationForFarmerAndDate(Long farmerId, LocalDate date) {
         return recommendationRepository.findByFarmerIdAndDate(farmerId, date).stream().findFirst();
     }
-    
+
+    public List<RecommendationDto> getFarmerRecommendationsByDateRange(Long farmerId, LocalDate fromDate, LocalDate toDate) {
+        log.info("Fetching recommendations for farmer: {} from {} to {}", farmerId, fromDate, toDate);
+        List<IrrigationRecommendation> recommendations;
+        if (fromDate != null && toDate != null) {
+            recommendations = recommendationRepository.findByFarmerIdAndDateBetween(farmerId, fromDate, toDate);
+        } else {
+            recommendations = recommendationRepository.findByFarmerIdOrderByDateDesc(farmerId);
+        }
+        return recommendations.stream()
+                .map(RecommendationDto::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+    public Optional<RecommendationDto> getLatestRecommendation(Long farmerId) {
+        log.info("Fetching latest recommendation for farmer: {}", farmerId);
+        return recommendationRepository.findLatestByFarmerId(farmerId).stream()
+                .findFirst()
+                .map(RecommendationDto::fromEntity);
+    }
+
     public boolean hasRecommendationForDate(Long farmerId, LocalDate date) {
         return !recommendationRepository.findByFarmerIdAndDate(farmerId, date).isEmpty();
     }

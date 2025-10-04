@@ -8,7 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/zones")
@@ -100,15 +102,14 @@ public class ZoneManagementController {
         
         try {
             // Create mock irrigation status
-            Object status = new Object() {
-                public final Long zoneId = zoneId;
-                public final String status = "ACTIVE";
-                public final Double moistureLevel = 65.5;
-                public final String lastIrrigation = "2024-01-15T08:30:00Z";
-                public final String nextScheduled = "2024-01-16T08:30:00Z";
-                public final Double waterUsed = 150.5;
-                public final String recommendations = "Zone is well irrigated";
-            };
+            Map<String, Object> status = new HashMap<>();
+            status.put("zoneId", zoneId);
+            status.put("status", "ACTIVE");
+            status.put("moistureLevel", 65.5);
+            status.put("lastIrrigation", "2024-01-15T08:30:00Z");
+            status.put("nextScheduled", "2024-01-16T08:30:00Z");
+            status.put("waterUsed", 150.5);
+            status.put("recommendations", "Zone is well irrigated");
             
             return ResponseEntity.ok(ApiResponse.success("Irrigation status retrieved successfully", status));
         } catch (Exception e) {
@@ -138,24 +139,23 @@ public class ZoneManagementController {
         log.info("Fetching sensors for zone ID: {}", zoneId);
         
         try {
-            List<Object> sensors = List.of(
-                new Object() {
-                    public final Long id = 1L;
-                    public final String type = "SOIL_MOISTURE";
-                    public final Double value = 65.5;
-                    public final String unit = "%";
-                    public final String lastReading = "2024-01-15T10:30:00Z";
-                    public final String status = "ACTIVE";
-                },
-                new Object() {
-                    public final Long id = 2L;
-                    public final String type = "TEMPERATURE";
-                    public final Double value = 25.8;
-                    public final String unit = "°C";
-                    public final String lastReading = "2024-01-15T10:30:00Z";
-                    public final String status = "ACTIVE";
-                }
-            );
+            Map<String, Object> sensor1 = new HashMap<>();
+            sensor1.put("id", 1L);
+            sensor1.put("type", "SOIL_MOISTURE");
+            sensor1.put("value", 65.5);
+            sensor1.put("unit", "%");
+            sensor1.put("lastReading", "2024-01-15T10:30:00Z");
+            sensor1.put("status", "ACTIVE");
+
+            Map<String, Object> sensor2 = new HashMap<>();
+            sensor2.put("id", 2L);
+            sensor2.put("type", "TEMPERATURE");
+            sensor2.put("value", 25.8);
+            sensor2.put("unit", "°C");
+            sensor2.put("lastReading", "2024-01-15T10:30:00Z");
+            sensor2.put("status", "ACTIVE");
+
+            List<Object> sensors = List.of(sensor1, sensor2);
             
             return ResponseEntity.ok(ApiResponse.success("Sensors retrieved successfully", sensors));
         } catch (Exception e) {
