@@ -44,6 +44,21 @@ A comprehensive Spring Boot backend system that provides daily, location-aware i
 - OpenWeatherMap API key
 - Twilio account (for SMS)
 
+### 🐞 Insect.id API Setup (for Pest Detection)
+
+The application uses the [Insect.id API](https://insect.kindwise.com/) for pest detection. To enable this feature, you need to obtain an API key and configure it in the backend.
+
+1.  **Get an API Key**: Request an API key from the [Insect.id website](https://insect.kindwise.com/).
+2.  **Set Environment Variable**: Set the `INSECT_ID_API_KEY` environment variable with the key you obtained.
+
+    ```bash
+    export INSECT_ID_API_KEY="your_insect_id_api_key"
+    ```
+
+3.  **Run the application**: The pest detection feature will now be enabled.
+
+If the API key is not provided, the pest detection endpoint will return an error.
+
 ## 🚀 Quick Start
 
 ### 1. Clone and Setup
@@ -355,6 +370,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 **Built with ❤️ for sustainable agriculture and smart farming**
-#   r e b o o t - a g r i c u l t u r e - b a c k e n d  
- #   r e b o o t - a g r i c u l t u r e - b a c k e n d  
- 

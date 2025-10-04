@@ -49,6 +49,42 @@ public class FarmerZoneService {
         return FarmerZoneDto.fromEntity(savedZone);
     }
     
+    public FarmerZoneDto updateZone(Long zoneId, FarmerZoneDto zoneDto) {
+        log.info("Updating zone ID: {}", zoneId);
+        
+        FarmerZone zone = farmerZoneRepository.findById(zoneId)
+                .orElseThrow(() -> new RuntimeException("Zone not found with ID: " + zoneId));
+        
+        zone.setName(zoneDto.getName());
+        zone.setLatitude(zoneDto.getLatitude());
+        zone.setLongitude(zoneDto.getLongitude());
+        zone.setDescription(zoneDto.getDescription());
+        
+        FarmerZone updatedZone = farmerZoneRepository.save(zone);
+        log.info("Zone updated successfully");
+        
+        return FarmerZoneDto.fromEntity(updatedZone);
+    }
+    
+    public void deleteZone(Long zoneId) {
+        log.info("Deleting zone ID: {}", zoneId);
+        
+        FarmerZone zone = farmerZoneRepository.findById(zoneId)
+                .orElseThrow(() -> new RuntimeException("Zone not found with ID: " + zoneId));
+        
+        farmerZoneRepository.delete(zone);
+        log.info("Zone deleted successfully");
+    }
+    
+    public FarmerZoneDto getZoneById(Long zoneId) {
+        log.info("Fetching zone ID: {}", zoneId);
+        
+        FarmerZone zone = farmerZoneRepository.findById(zoneId)
+                .orElseThrow(() -> new RuntimeException("Zone not found with ID: " + zoneId));
+        
+        return FarmerZoneDto.fromEntity(zone);
+    }
+    
     public FarmerZoneDto updateZone(Long farmerId, Long zoneId, FarmerZoneDto zoneDto) {
         log.info("Updating zone ID: {} for farmer ID: {}", zoneId, farmerId);
         
