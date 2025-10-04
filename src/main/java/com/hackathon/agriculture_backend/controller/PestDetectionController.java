@@ -65,13 +65,13 @@ public class PestDetectionController {
                 .exceptionally(ex -> {
                      log.error("Error processing pest detection: {}", ex.getMessage());
                      Map<String, Object> errorResponse = Map.of("error", "Pest detection failed: " + ex.getMessage());
-                     return ResponseEntity.<Object>status(500).body(errorResponse);
+                     return ResponseEntity.<Object>status(500).body((Object) errorResponse);
                 });
 
         } catch (Exception e) {
             log.error("Error processing pest detection request: {}", e.getMessage());
             Map<String, Object> errorResponse = Map.of("error", "Pest detection failed: " + e.getMessage());
-            return CompletableFuture.completedFuture(ResponseEntity.<Object>status(500).body(errorResponse));
+            return CompletableFuture.completedFuture(ResponseEntity.<Object>status(500).body((Object) errorResponse));
         }
     }
 
