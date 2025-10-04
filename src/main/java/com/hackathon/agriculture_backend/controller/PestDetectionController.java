@@ -28,7 +28,7 @@ public class PestDetectionController {
         try {
             if (image.isEmpty()) {
                 Map<String, Object> errorResponse = Map.of("error", "No image provided");
-                return CompletableFuture.completedFuture(ResponseEntity.<Object>badRequest().body(errorResponse));
+                return CompletableFuture.completedFuture(ResponseEntity.badRequest().body(errorResponse));
             }
 
             return pestDetectionService.detectPest(image)
@@ -62,16 +62,19 @@ public class PestDetectionController {
                     return ResponseEntity.ok(response);
                 })
                 .toFuture()
-                .exceptionally(ex -> {
-                     log.error("Error processing pest detection: {}", ex.getMessage());
-                     Map<String, Object> errorResponse = Map.of("error", "Pest detection failed: " + ex.getMessage());
-                     return ResponseEntity.<Object>status(500).body((Object) errorResponse);
+                .handle((result, ex) -> {
+                    if (ex != null) {
+                        log.error("Error processing pest detection: {}", ex.getMessage());
+                        Map<String, Object> errorResponse = Map.of("error", "Pest detection failed: " + ex.getMessage());
+                        return ResponseEntity.status(500).body(errorResponse);
+                    }
+                    return result;
                 });
 
         } catch (Exception e) {
             log.error("Error processing pest detection request: {}", e.getMessage());
             Map<String, Object> errorResponse = Map.of("error", "Pest detection failed: " + e.getMessage());
-            return CompletableFuture.completedFuture(ResponseEntity.<Object>status(500).body((Object) errorResponse));
+            return CompletableFuture.completedFuture(ResponseEntity.status(500).body(errorResponse));
         }
     }
 
@@ -105,7 +108,7 @@ public class PestDetectionController {
         } catch (Exception e) {
             log.error("Error fetching detection history: {}", e.getMessage());
             Map<String, Object> errorResponse = Map.of("error", "Failed to fetch history: " + e.getMessage());
-            return ResponseEntity.<Object>status(500).body(errorResponse);
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 
@@ -116,12 +119,12 @@ public class PestDetectionController {
         try {
             // Mock deletion
             Map<String, Object> successResponse = Map.of("message", "Detection record deleted successfully", "id", id);
-            return ResponseEntity.<Object>ok(successResponse);
+            return ResponseEntity.ok(successResponse);
 
         } catch (Exception e) {
             log.error("Error deleting detection record: {}", e.getMessage());
             Map<String, Object> errorResponse = Map.of("error", "Failed to delete record: " + e.getMessage());
-            return ResponseEntity.<Object>status(500).body(errorResponse);
+            return ResponseEntity.status(500).body(errorResponse);
         }
     }
 
